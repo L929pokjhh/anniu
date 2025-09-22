@@ -1,0 +1,34 @@
+<!--committee.wxml-->
+<view class="container">
+  <!-- 搜索框 -->
+  <view class="search-section">
+    <view class="search-bar">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="请输入关键字" bindinput="onSearchInput" value="{{searchText}}" bindconfirm="performSearch"/>
+      <text class="clear-icon" wx:if="{{searchText}}" bindtap="clearSearch">✕</text>
+    </view>
+  </view>
+
+  <!-- 专委会网格 -->
+  <view class="committee-grid">
+    <view 
+      class="committee-card" 
+      wx:for="{{committees}}" 
+      wx:key="id"
+      bindtap="onCommitteeCardTap"
+      data-id="{{item.id}}"
+      style="background: {{item.bgColor}}"
+    >
+      <text class="committee-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 空状态提示 -->
+  <view wx:if="{{committees.length === 0}}" class="empty-state">
+    <text class="empty-text">暂无匹配的专委会</text>
+    <button class="reset-btn" bindtap="clearSearch">重置搜索</button>
+  </view>
+
+  <!-- 底部占位 -->
+  <view class="bottom-placeholder"></view>
+</view>

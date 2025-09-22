@@ -1,0 +1,83 @@
+<!--transform.wxml-->
+<view class="container">
+  <!-- 搜索框 -->
+  <view class="search-section">
+    <view class="search-bar">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="请输入关键字" bindinput="onSearchInput" value="{{searchText}}" bindconfirm="performSearch"/>
+      <text class="clear-icon" wx:if="{{searchText}}" bindtap="clearSearch">✕</text>
+    </view>
+  </view>
+
+  <!-- 最新消息 -->
+  <view class="news-section" style="width: 337rpx; display: block; box-sizing: border-box; margin-left: 0; text-align: left; align-self: flex-start">
+    <view class="section-header">
+       <text class="section-title" style="width: 260rpx; height: 64rpx; display: block; box-sizing: border-box; text-align: left">最新消息</text>
+    </view>
+    
+    <view class="news-list" style="width:400rpx; height: 810rpx; display: flex; box-sizing: border-box">
+      <view 
+        class="news-card" 
+        wx:for="{{latestNews}}" 
+        wx:key="id" 
+        wx:for-index="index"
+        bindtap="onNewsCardTap"
+        data-id="{{item.id}}"
+       style="width: 695rpx; display: block; box-sizing: border-box; left: 6rpx; top: 2rpx; position: relative">
+        <image style="width: 677rpx; display: block; box-sizing: border-box; height: 395rpx" 
+          class="news-image" 
+          src="{{item.image}}" 
+          mode="aspectFill"
+          lazy-load="{{true}}"
+          bindtap="previewImage"
+          data-url="{{item.image}}"
+          binderror="onImageError"
+          data-type="news"
+          data-index="{{index}}"
+        />
+        <view class="news-tag">{{item.title}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 历史成果展示 -->
+  <view class="achievement-section">
+    <view class="section-header">
+      <text class="section-title">历史成果展示</text>
+      <text class="more-link" bindtap="viewMoreInfo">更多信息</text>
+    </view>
+    
+    <view class="achievement-list">
+      <view 
+        class="achievement-card" 
+        wx:for="{{achievements}}" 
+        wx:key="id"
+        wx:for-index="index"
+        bindtap="onAchievementCardTap"
+        data-id="{{item.id}}"
+      >
+        <image 
+          class="achievement-image" 
+          src="{{item.image}}" 
+          mode="aspectFill"
+          lazy-load="{{true}}"
+          bindtap="previewImage"
+          data-url="{{item.image}}"
+          binderror="onImageError"
+          data-type="achievement"
+          data-index="{{index}}"
+        />
+        <view class="achievement-content">
+          <view class="achievement-title">{{item.title}}</view>
+          <text class="achievement-description">{{item.description}}</text>
+          <view class="achievement-tags" wx:if="{{item.tags}}">
+            <text class="tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">{{tag}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部占位 -->
+  <view class="bottom-placeholder"></view>
+</view>

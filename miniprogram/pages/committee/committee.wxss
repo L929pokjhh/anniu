@@ -1,0 +1,183 @@
+/* committee.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding-bottom: 100rpx;
+}
+
+/* 搜索框样式 */
+.search-section {
+  margin-bottom: 30rpx;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 50rpx;
+  padding: 20rpx 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.search-icon {
+  font-size: 32rpx;
+  color: #999;
+  margin-right: 20rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.clear-icon {
+  font-size: 24rpx;
+  color: #ccc;
+  margin-left: 20rpx;
+  padding: 10rpx;
+}
+
+/* 专委会网格样式 */
+.committee-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
+}
+
+.committee-card {
+  padding: 50rpx 30rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120rpx;
+  position: relative;
+}
+
+.committee-card:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.1);
+}
+
+.committee-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+  text-align: center;
+  line-height: 1.4;
+  word-break: break-all;
+  display: block;
+}
+
+/* 空状态样式 */
+.empty-state {
+  text-align: center;
+  padding: 100rpx 40rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #999;
+  margin-bottom: 40rpx;
+  display: block;
+}
+
+.reset-btn {
+  background: linear-gradient(135deg, #87CEEB, #4a90e2);
+  color: #ffffff;
+  padding: 20rpx 40rpx;
+  border-radius: 50rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  box-shadow: 0 6rpx 20rpx rgba(135, 206, 235, 0.3);
+}
+
+.reset-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 15rpx rgba(135, 206, 235, 0.2);
+}
+
+/* 底部占位 */
+.bottom-placeholder {
+  height: 40rpx;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 375px) {
+  .committee-card {
+    padding: 40rpx 20rpx;
+    min-height: 100rpx;
+  }
+  
+  .committee-name {
+    font-size: 26rpx;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .container {
+    max-width: 750rpx;
+    margin: 0 auto;
+  }
+  
+  .committee-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 特殊样式优化 */
+.committee-card {
+  overflow: hidden;
+  backdrop-filter: blur(10rpx);
+}
+
+.committee-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  opacity: 0.9;
+  z-index: -1;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.committee-card {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* 长文本专委会名称优化 */
+.committee-card:nth-child(2) .committee-name,
+.committee-card:nth-child(4) .committee-name,
+.committee-card:nth-child(5) .committee-name,
+.committee-card:nth-child(7) .committee-name,
+.committee-card:nth-child(9) .committee-name,
+.committee-card:nth-child(10) .committee-name,
+.committee-card:nth-child(11) .committee-name,
+.committee-card:nth-child(12) .committee-name {
+  font-size: 26rpx;
+  line-height: 1.3;
+}

@@ -1,0 +1,93 @@
+<!--register.wxml-->
+<view class="container">
+  <view class="register-form">
+    <view class="form-title">注册</view>
+    
+    <!-- 姓名 -->
+    <view class="form-group">
+      <label class="form-label required">姓名</label>
+      <input style="width: 600rpx; height: 80rpx; display: block; box-sizing: border-box" class="form-input" placeholder="请输入" bindinput="onNameInput" value="{{formData.name}}" />
+    </view>
+    
+    <!-- 性别 -->
+    <view class="form-group">
+      <label class="form-label">性别</label>
+      <radio-group class="gender-group" bindchange="onGenderChange">
+        <label class="radio-label">
+          <radio value="male" checked="{{formData.gender=='male'}}" />男
+        </label>
+        <label class="radio-label">
+          <radio value="female" checked="{{formData.gender=='female'}}" />女
+        </label>
+      </radio-group>
+    </view>
+
+    <!-- 联系方式 -->
+    <view class="form-group">
+      <label class="form-label required">联系方式</label>
+      <input style="width: 600rpx; height: 80rpx; display: block; box-sizing: border-box" class="form-input" placeholder="请输入手机号码" bindinput="onPhoneInput" value="{{formData.phone}}" type="number" />
+    </view>
+
+    <!-- 出生时间 -->
+    <view class="form-group">
+      <label class="form-label">出生时间</label>
+      <picker mode="date" value="{{formData.birthDate}}" bindchange="onBirthDateChange">
+        <view class="picker-view" style="width: 600rpx; height: 80rpx; display: block; box-sizing: border-box">{{formData.birthDate || '请选择出生日期'}}</view>
+      </picker>
+    </view>
+
+    <!-- 毕业院校 -->
+    <view class="form-group">
+      <label class="form-label required">毕业院校</label>
+      <input style="width: 600rpx; height: 80rpx; display: block; box-sizing: border-box" class="form-input" placeholder="请输入" bindinput="onSchoolInput" value="{{formData.school}}" />
+    </view>
+
+    <!-- 毕业时间 -->
+    <view class="form-group">
+      <label class="form-label">毕业时间</label>
+      <picker mode="date" value="{{formData.graduateDate}}" bindchange="onGraduateDateChange">
+        <view class="picker-view">{{formData.graduateDate || '请选择毕业日期'}}</view>
+      </picker>
+    </view>
+
+    <!-- 专业 -->
+    <view class="form-group">
+      <label class="form-label required">专业</label>
+      <input style="width: 600rpx; height: 80rpx; display: block; box-sizing: border-box" class="form-input" placeholder="请输入" bindinput="onMajorInput" value="{{formData.major}}" />
+    </view>
+
+
+    
+
+    <!-- 内部推荐码 -->
+    <view class="form-group">
+      <label class="form-label">内部推荐码</label>
+      <input style="width: 600rpx; height: 80rpx; display: block; box-sizing: border-box" class="form-input" placeholder="请输入推荐码（选填)" bindinput="onReferralCodeInput" value="{{formData.referralCode}}" />
+    </view>
+
+    <!-- 工作单位 -->
+    <view class="form-group">
+      <label class="form-label required">工作单位</label>
+      <input style="width: 600rpx; height: 80rpx; display: block; box-sizing: border-box" class="form-input" placeholder="请输入" bindinput="onWorkUnitInput" value="{{formData.workUnit}}" />
+    </view>
+
+    <!-- 学历信息上传 -->
+    <view class="form-group">
+      <label class="form-label">学历信息上传</label>
+      <button class="upload-btn" bindtap="chooseImage">
+        {{uploadedImage ? '重新上传' : '点击上传学历证明'}}
+      </button>
+      <view wx:if="{{uploadedImage}}" class="uploaded-image">
+        <image src="{{uploadedImage}}" mode="aspectFit" />
+      </view>
+    </view>
+
+    <!-- 按钮组 -->
+    <view class="form-buttons">
+      <button class="btn-secondary" bindtap="onCancel">取消</button>
+      <button class="btn-primary" bindtap="onRegister" loading="{{isSubmitting}}">
+        {{isSubmitting ? '注册中...' : '注册'}}
+      </button>
+    </view>
+  </view>
+</view>

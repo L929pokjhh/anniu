@@ -1,0 +1,78 @@
+<!--main.wxml-->
+<view class="container" style="position: relative; left: 0rpx; top: -45rpx">
+  <!-- 搜索框 -->
+  <view class="search-section">
+    <view class="search-bar" style="position: relative; left: 0rpx; top: -156rpx">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="请输入关键字" bindinput="onSearchInput" value="{{searchText}}"/>
+      <text class="clear-icon" wx:if="{{searchText}}" bindtap="clearSearch">✕</text>
+    </view>
+  </view>
+
+  <!-- 功能卡片区域 -->
+  <view class="function-cards" style="position: relative; left: 0rpx; top: -118rpx">
+    <view class="card-row">
+      <view class="function-card card-green-blue" bindtap="navigateToPage" data-page="secretary" style="width: 297rpx; height: 160rpx; display: flex; box-sizing: border-box; left: 0rpx; top: 0rpx">
+        <text class="card-title">秘书处</text>
+      </view>
+      <view class="function-card card-blue" bindtap="navigateToPage" data-page="committee" style="width: 318rpx; height: 160rpx; display: flex; box-sizing: border-box; position: relative; left: 31rpx; top: 0rpx">
+        <text class="card-title">专委会</text>
+      </view>
+    </view>
+    <view class="card-row">
+      <view class="function-card card-blue-green" bindtap="navigateToPage" data-page="transform" style="width: 310rpx; height: 160rpx; display: flex; box-sizing: border-box">
+        <text class="card-title">转化中心</text>
+      </view>
+      <view class="function-card card-light-blue" bindtap="navigateToPage" data-page="academy" style="width: 310rpx; height: 160rpx; display: flex; box-sizing: border-box; position: relative; left: 29rpx; top: 0rpx">
+        <text class="card-title">求是书院</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 活动详情 -->
+  <view class="activity-section" style="position: relative; left: 0rpx; top: -118rpx; width: 677rpx; display: block; box-sizing: border-box">
+    <view class="section-header">
+      <text class="section-title">活动详情</text>
+      <text class="more-link" bindtap="viewMoreActivities">展示最新活动</text>
+    </view>
+    
+    <view class="activity-list">
+      <view class="activity-item" wx:for="{{activities}}" wx:key="id" wx:for-index="index" bindtap="viewActivityDetail" data-id="{{item.id}}" style="width: 654rpx; display: block; box-sizing: border-box">
+        <image style="width: 654rpx; display: inline-block; box-sizing: border-box; height: 387rpx; position: relative; left: 1rpx; top: 1rpx" class="activity-image" src="{{item.image}}" mode="aspectFill" lazy-load="{{true}}" binderror="onImageError" bindload="onImageLoad" data-index="{{index}}"/>
+        <text class="activity-title">{{item.title}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 更多信息 -->
+  <view class="info-section">
+    <text class="section-title">更多信息</text>
+    
+    <view class="info-item" bindtap="viewTalentProgram">
+      <image class="info-image" src="/images/talent_program.png" mode="aspectFill"/>
+      <view class="info-content">
+        <text class="info-title">人才培养方案</text>
+        <text class="info-desc">为博士联盟成员提供全方位的人才培养计划，促进学术交流与合作发展，建立长期的人才培养体系，助力成员职业发展与学术进步。</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部导航占位 -->
+  <view class="bottom-nav-placeholder"></view>
+</view>
+
+<!-- 底部导航栏 -->
+<view class="bottom-navigation">
+  <view class="nav-item" bindtap="navigateToHome">
+    <view class="nav-icon-custom">🏠</view>
+    <text class="nav-text">首页</text>
+  </view>
+  <view class="nav-item" bindtap="navigateToAlliance">
+    <view class="nav-icon-custom">📊</view>
+    <text class="nav-text">联盟介绍</text>
+  </view>
+  <view class="nav-item" bindtap="navigateToActivities">
+    <view class="nav-icon-custom">📅</view>
+    <text class="nav-text">活动详情</text>
+  </view>
+</view>
