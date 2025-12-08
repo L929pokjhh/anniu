@@ -174,16 +174,14 @@ pipeline {
             junit 'test-results/junit.xml' || true
             
             // 发布HTML报告
-            publishHTML (
-                target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'test-results',
-                    reportFiles: 'report.html',
-                    reportName: '按钮功能测试报告'
-                ]
-            ) || true
+            publishHTML target: [
+                allowMissing: false,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'test-results',
+                reportFiles: 'report.html',
+                reportName: '按钮功能测试报告'
+            ]
             
             // 清理工作空间
             echo "🧹 清理工作空间..."
