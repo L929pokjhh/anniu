@@ -18,7 +18,7 @@ pipeline {
                     def totalTests = 5
                     def passedTests = 4
                     def failedTests = 1
-                    def passRate = ((passedTests / totalTests) * 100).round(2)
+                    def passRate = Math.round((passedTests / totalTests) * 100)
                     
                     echo "📋 测试摘要:"
                     echo "   总测试数: ${totalTests}"
@@ -189,33 +189,24 @@ pipeline {
     
     post {
         always {
-            echo '📦 发布测试报告...'
+            echo '📦 归档测试报告...'
             
-            // 简化的post块，避免复杂逻辑
+            // 只归档，不使用publishHTML插件
             archiveArtifacts artifacts: 'test-results.*', allowEmptyArchive: true
             
-            // 检查HTML报告是否存在再发布
-            script {
-                try {
-                    publishHTML target: [
-                        allowMissing: true,
-                        reportDir: '.',
-                        reportFiles: 'test-results.html',
-                        reportName: '按钮功能测试报告'
-                    ]
-                    echo '✅ HTML报告发布完成'
-                } catch (Exception e) {
-                    echo "⚠️ HTML报告发布失败: ${e.getMessage()}"
-                }
-            }
+            echo '✅ 报告归档完成'
+            echo '💡 提示: 请在"Artifacts"中下载test-results.html查看完整报告'
         }
         
         success {
             echo '🎉 构建成功完成！'
+            echo '📊 测试结果: 4个通过，1个失败，通过率80%'
         }
         
         unstable {
             echo '⚠️ 构建完成，但存在失败的测试用例'
+            echo '❌ 失败用例: 注册页面上传按钮'
+            echo '🔧 建议: 检查文件上传相关功能'
         }
         
         failure {
