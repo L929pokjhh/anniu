@@ -2,8 +2,7 @@ pipeline {
     agent any
     
     options {
-        // 设置Git超时和重试
-        checkoutRetryCount(3)
+        // 设置超时
         timeout(time: 10, unit: 'MINUTES')
     }
     
