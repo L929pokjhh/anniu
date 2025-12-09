@@ -46,7 +46,7 @@ pipeline {
             steps {
                 echo '📊 生成测试报告...'
                 
-                // 使用writeFile直接生成报告，避免变量定义
+                // 使用writeFile直接生成报告
                 writeFile file: 'test-results.txt', text: """微信小程序按钮功能测试报告
 =====================================
 生成时间: ${new Date().format('yyyy-MM-dd HH:mm:ss')}
@@ -191,21 +191,21 @@ pipeline {
         always {
             echo '📦 发布测试报告...'
             
+            // 简化的post块，避免复杂逻辑
+            archiveArtifacts artifacts: 'test-results.*', allowEmptyArchive: true
+            
+            // 检查HTML报告是否存在再发布
             script {
                 try {
-                    archiveArtifacts artifacts: 'test-results.*', allowEmptyArchive: true
-                    
                     publishHTML target: [
                         allowMissing: true,
                         reportDir: '.',
                         reportFiles: 'test-results.html',
                         reportName: '按钮功能测试报告'
                     ]
-                    
-                    echo '✅ 报告发布完成'
-                    
+                    echo '✅ HTML报告发布完成'
                 } catch (Exception e) {
-                    echo "⚠️ 报告发布失败: ${e.getMessage()}"
+                    echo "⚠️ HTML报告发布失败: ${e.getMessage()}"
                 }
             }
         }
