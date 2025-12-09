@@ -111,85 +111,23 @@ fs.writeFileSync('test-results/results.json', JSON.stringify(testResults, null, 
 console.log('✅ JSON报告生成完成: test-results/results.json');
 
 // JUnit XML报告
-const junitXml = \`<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="微信小程序按钮功能测试" tests="\${testResults.summary.total}" failures="\${testResults.summary.failed}" errors="\${testResults.summary.errors}">
-    <testsuite name="按钮功能测试" tests="\${testResults.summary.total}" failures="\${testResults.summary.failed}" errors="\${testResults.summary.errors}">
-\${testResults.testCases.map(testCase => 
-    \`        <testcase name="\${testCase.name}" classname="button-test" time="\${testCase.duration / 1000}">
-\${testCase.status === 'failed' ? \`            <failure message="\${testCase.message}">\${testCase.message}</failure>\` : ''}
-        </testcase>\`
-).join('\\n')}
-    </testsuite>
-</testsuites>\`;
+const junitXml = '<?xml version="1.0" encoding="UTF-8"?><testsuites name="微信小程序按钮功能测试" tests="' + testResults.summary.total + '" failures="' + testResults.summary.failed + '" errors="' + testResults.summary.errors + '"><testsuite name="按钮功能测试" tests="' + testResults.summary.total + '" failures="' + testResults.summary.failed + '" errors="' + testResults.summary.errors + '">' + testResults.testCases.map(testCase => '<testcase name="' + testCase.name + '" classname="button-test" time="' + (testCase.duration / 1000) + '">' + (testCase.status === 'failed' ? '<failure message="' + testCase.message + '">' + testCase.message + '</failure>' : '') + '</testcase>').join('\\n') + '</testsuite></testsuites>';
 
 fs.writeFileSync('test-results/junit.xml', junitXml);
 console.log('✅ JUnit报告生成完成: test-results/junit.xml');
 
 // HTML报告
-const htmlReport = \`<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>微信小程序按钮功能测试报告</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { background: #f0f8ff; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-        .summary { display: flex; gap: 20px; margin-bottom: 20px; }
-        .stat { background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; }
-        .passed { background: #d4edda; }
-        .failed { background: #f8d7da; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background: #f2f2f2; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🤖 微信小程序按钮功能测试报告</h1>
-        <p>生成时间: \${new Date().toLocaleString()}</p>
-        <p>测试环境: Jenkins CI/CD</p>
-    </div>
-    
-    <div class="summary">
-        <div class="stat">总测试数: \${testResults.summary.total}</div>
-        <div class="stat passed">通过: \${testResults.summary.passed}</div>
-        <div class="stat failed">失败: \${testResults.summary.failed}</div>
-    </div>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>测试用例</th>
-                <th>状态</th>
-                <th>耗时(ms)</th>
-                <th>描述</th>
-                <th>消息</th>
-            </tr>
-        </thead>
-        <tbody>
-\${testResults.testCases.map(testCase => 
-    \`            <tr>
-                <td>\${testCase.name}</td>
-                <td style="color: \${testCase.status === 'passed' ? 'green' : 'red'}">\${testCase.status}</td>
-                <td>\${testCase.duration}</td>
-                <td>\${testCase.description}</td>
-                <td>\${testCase.message || '-'}</td>
-            </tr>\`
-).join('\\n')}
-        </tbody>
-    </table>
-</body>
-</html>\`;
+const htmlReport = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>微信小程序按钮功能测试报告</title><style>body { font-family: Arial, sans-serif; margin: 20px; }.header { background: #f0f8ff; padding: 20px; border-radius: 5px; margin-bottom: 20px; }.summary { display: flex; gap: 20px; margin-bottom: 20px; }.stat { background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; }.passed { background: #d4edda; }.failed { background: #f8d7da; }table { width: 100%; border-collapse: collapse; }th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }th { background: #f2f2f2; }</style></head><body><div class="header"><h1>🤖 微信小程序按钮功能测试报告</h1><p>生成时间: ' + new Date().toLocaleString() + '</p><p>测试环境: Jenkins CI/CD</p></div><div class="summary"><div class="stat">总测试数: ' + testResults.summary.total + '</div><div class="stat passed">通过: ' + testResults.summary.passed + '</div><div class="stat failed">失败: ' + testResults.summary.failed + '</div></div><table><thead><tr><th>测试用例</th><th>状态</th><th>耗时(ms)</th><th>描述</th><th>消息</th></tr></thead><tbody>' + testResults.testCases.map(testCase => '<tr><td>' + testCase.name + '</td><td style="color: ' + (testCase.status === 'passed' ? 'green' : 'red') + '">' + testCase.status + '</td><td>' + testCase.duration + '</td><td>' + testCase.description + '</td><td>' + (testCase.message || '-') + '</td></tr>').join('\\n') + '</tbody></table></body></html>';
 
 fs.writeFileSync('test-results/report.html', htmlReport);
 console.log('✅ HTML报告生成完成: test-results/report.html');
 
 // 输出测试摘要
 console.log('\\n📋 测试摘要:');
-console.log(\`   总测试数: \${testResults.summary.total}\`);
-console.log(\`   通过数: \${testResults.summary.passed}\`);
-console.log(\`   失败数: \${testResults.summary.failed}\`);
-console.log(\`   通过率: \${((testResults.summary.passed / testResults.summary.total) * 100).toFixed(2)}%\`);
+console.log('   总测试数: ' + testResults.summary.total);
+console.log('   通过数: ' + testResults.summary.passed);
+console.log('   失败数: ' + testResults.summary.failed);
+console.log('   通过率: ' + ((testResults.summary.passed / testResults.summary.total) * 100).toFixed(2) + '%');
 
 // 设置退出码
 process.exit(testResults.summary.failed > 0 ? 1 : 0);
