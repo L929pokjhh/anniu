@@ -63,53 +63,51 @@ pipeline {
                     
                     def totalTests = testCases.size()
                     def passRate = (passedCount * 100) / totalTests
+                    def avgDuration = totalDuration / totalTests
+                    def timestamp = new Date().format('yyyy-MM-dd HH:mm:ss')
                     
                     echo "📋 测试摘要:"
                     echo "   总测试数: ${totalTests}"
                     echo "   通过数: ${passedCount}"
                     echo "   失败数: ${failedCount}"
                     echo "   总耗时: ${totalDuration}ms"
-                    echo "   平均耗时: ${(totalDuration / totalTests)}ms"
+                    echo "   平均耗时: ${avgDuration}ms"
                     echo "   通过率: ${passRate}%"
                     
                     // 设置构建结果
                     currentBuild.description = "测试: ${passedCount}/${totalTests}"
                     
-                    // 手动构建JSON字符串（避免使用JsonBuilder）
-                    def timestamp = new Date().format('yyyy-MM-dd HH:mm:ss')
-                    def testResultsJson = "{"
-                    testResultsJson += "\"summary\":{"
-                    testResultsJson += "\"total\":${totalTests},"
-                    testResultsJson += "\"passed\":${passedCount},"
-                    testResultsJson += "\"failed\":${failedCount},"
-                    testResultsJson += "\"totalDuration\":${totalDuration},"
-                    testResultsJson += "\"averageDuration\":${totalDuration / totalTests},"
-                    testResultsJson += "\"passRate\":${passRate},"
-                    testResultsJson += "\"timestamp\":\"${timestamp}\""
-                    testResultsJson += "},"
-                    testResultsJson += "\"testCases\":["
+                    // 生成统计数据文件，避免序列化问题
+                    def summaryData = "TOTAL_TESTS=${totalTests}\n"
+                    summaryData += "PASSED_TESTS=${passedCount}\n"
+                    summaryData += "FAILED_TESTS=${failedCount}\n"
+                    summaryData += "TOTAL_DURATION=${totalDuration}\n"
+                    summaryData += "AVG_DURATION=${avgDuration}\n"
+                    summaryData += "PASS_RATE=${passRate}\n"
+                    summaryData += "TIMESTAMP=${timestamp}"
                     
+                    writeFile file: 'test-summary.properties', text: summaryData
+                    
+                    // 生成详细的测试结果文件
+                    def detailsData = ""
                     actualResults.eachWithIndex { result, index ->
-                        testResultsJson += "{"
-                        testResultsJson += "\"name\":\"${result.name}\","
-                        testResultsJson += "\"expectedStatus\":\"${result.expectedStatus}\","
-                        testResultsJson += "\"actualStatus\":\"${result.actualStatus}\","
-                        testResultsJson += "\"duration\":${result.duration}"
+                        detailsData += "TEST_${index}_NAME=${result.name}\n"
+                        detailsData += "TEST_${index}_STATUS=${result.actualStatus}\n"
+                        detailsData += "TEST_${index}_DURATION=${result.duration}\n"
                         if (result.message) {
-                            testResultsJson += ",\"message\":\"${result.message}\""
+                            detailsData += "TEST_${index}_MESSAGE=${result.message}\n"
                         }
-                        testResultsJson += "}"
-                        if (index < actualResults.size() - 1) {
-                            testResultsJson += ","
-                        }
+                        detailsData += "TEST_${index}_INDEX=${index}\n"
                     }
                     
-                    testResultsJson += "]"
-                    testResultsJson += "}"
+                    writeFile file: 'test-details.properties', text: detailsData
                     
-                    // 存储到文件中供后续使用
-                    writeFile file: 'test-results.json', text: testResultsJson
-                    env.testResultsFile = 'test-results.json'
+                    // 存储统计变量
+                    env.totalTests = totalTests.toString()
+                    env.passedTests = passedCount.toString()
+                    env.failedTests = failedCount.toString()
+                    env.passRate = passRate.toString()
+                    env.timestamp = timestamp
                 }
             }
         }
@@ -119,28 +117,55 @@ pipeline {
                 echo '📊 生成动态测试报告...'
                 
                 script {
-                    // 从文件读取测试结果
-                    def testResultsContent = readFile file: env.testResultsFile
-                    def testResults = new groovy.json.JsonSlurper().parseText(testResultsContent)
+                    // 读取统计数据，避免序列化问题
+                    def summaryContent = readFile file: 'test-summary.properties'
+                    def detailsContent = readFile file: 'test-details.properties'
+                    
+                    // 解析统计数据
+                    def summary = [:]
+                    summaryContent.split('\n').each { line ->
+                        if (line.contains('=')) {
+                            def parts = line.split('=', 2)
+                            summary[parts[0]] = parts[1]
+                        }
+                    }
+                    
+                    // 解析测试详情
+                    def testCases = []
+                    detailsContent.split('\n').each { line ->
+                        if (line.startsWith('TEST_') && line.contains('=')) {
+                            def parts = line.split('=', 2)
+                            def keyParts = parts[0].split('_')
+                            def testIndex = keyParts[1] as Integer
+                            def field = keyParts[2]
+                            
+                            // 确保测试案例数组足够大
+                            while (testCases.size() <= testIndex) {
+                                testCases.add([:])
+                            }
+                            
+                            testCases[testIndex][field] = parts[1]
+                        }
+                    }
                     
                     // 生成文本报告
                     def textReport = "微信小程序按钮功能测试报告\n=====================================\n"
-                    textReport += "生成时间: ${testResults.summary.timestamp}\n"
+                    textReport += "生成时间: ${summary.TIMESTAMP}\n"
                     textReport += "构建号: ${env.BUILD_NUMBER}\n\n"
                     textReport += "测试摘要:\n--------\n"
-                    textReport += "总测试数: ${testResults.summary.total}\n"
-                    textReport += "通过数: ${testResults.summary.passed}\n"
-                    textReport += "失败数: ${testResults.summary.failed}\n"
-                    textReport += "总耗时: ${testResults.summary.totalDuration}ms\n"
-                    textReport += "平均耗时: ${testResults.summary.averageDuration}ms\n"
-                    textReport += "通过率: ${testResults.summary.passRate}%\n\n"
+                    textReport += "总测试数: ${summary.TOTAL_TESTS}\n"
+                    textReport += "通过数: ${summary.PASSED_TESTS}\n"
+                    textReport += "失败数: ${summary.FAILED_TESTS}\n"
+                    textReport += "总耗时: ${summary.TOTAL_DURATION}ms\n"
+                    textReport += "平均耗时: ${summary.AVG_DURATION}ms\n"
+                    textReport += "通过率: ${summary.PASS_RATE}%\n\n"
                     textReport += "测试详情:\n--------"
                     
-                    testResults.testCases.each { testCase ->
-                        def status = testCase.actualStatus == 'passed' ? '✅' : '❌'
-                        textReport += "\n${status} ${testCase.name} - ${testCase.actualStatus} (${testCase.duration}ms)"
-                        if (testCase.message) {
-                            textReport += "\n   错误: ${testCase.message}"
+                    testCases.each { testCase ->
+                        def status = testCase.STATUS == 'passed' ? '✅' : '❌'
+                        textReport += "\n${status} ${testCase.NAME} - ${testCase.STATUS} (${testCase.DURATION}ms)"
+                        if (testCase.MESSAGE) {
+                            textReport += "\n   错误: ${testCase.MESSAGE}"
                         }
                     }
                     
@@ -149,7 +174,7 @@ pipeline {
                     textReport += "- 基于动态检测结果生成报告\n"
                     textReport += "- 建议关注失败的测试用例\n"
                     
-                    if (testResults.summary.failed > 0) {
+                    if (summary.FAILED_TESTS.toInteger() > 0) {
                         textReport += "- 当前存在失败的测试，请检查相关功能\n"
                     } else {
                         textReport += "- 所有测试用例均通过\n"
@@ -158,12 +183,12 @@ pipeline {
                     writeFile file: 'test-results.txt', text: textReport
                     
                     // 生成XML报告
-                    def xmlReport = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<testsuites name=\"微信小程序按钮功能测试\" tests=\"${testResults.summary.total}\" failures=\"${testResults.summary.failed}\" errors=\"0\" time=\"${testResults.summary.totalDuration / 1000}\">\n    <testsuite name=\"按钮功能测试\" tests=\"${testResults.summary.total}\" failures=\"${testResults.summary.failed}\" errors=\"0\" time=\"${testResults.summary.totalDuration / 1000}\">"
+                    def xmlReport = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<testsuites name=\"微信小程序按钮功能测试\" tests=\"${summary.TOTAL_TESTS}\" failures=\"${summary.FAILED_TESTS}\" errors=\"0\" time=\"${summary.TOTAL_DURATION.toInteger() / 1000}\">\n    <testsuite name=\"按钮功能测试\" tests=\"${summary.TOTAL_TESTS}\" failures=\"${summary.FAILED_TESTS}\" errors=\"0\" time=\"${summary.TOTAL_DURATION.toInteger() / 1000}\">"
                     
-                    testResults.testCases.each { testCase ->
-                        xmlReport += "\n        <testcase name=\"${testCase.name}\" classname=\"button-test\" time=\"${testCase.duration / 1000}\">"
-                        if (testCase.actualStatus == 'failed') {
-                            xmlReport += "\n            <failure message=\"${testCase.message}\">${testCase.message}</failure>"
+                    testCases.each { testCase ->
+                        xmlReport += "\n        <testcase name=\"${testCase.NAME}\" classname=\"button-test\" time=\"${testCase.DURATION.toInteger() / 1000}\">"
+                        if (testCase.STATUS == 'failed') {
+                            xmlReport += "\n            <failure message=\"${testCase.MESSAGE}\">${testCase.MESSAGE}</failure>"
                         }
                         xmlReport += "\n        </testcase>"
                     }
@@ -173,12 +198,12 @@ pipeline {
                     writeFile file: 'test-results.xml', text: xmlReport
                     
                     // 生成HTML报告
-                    def htmlReport = "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>微信小程序按钮功能测试报告</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }\n        .header { background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }\n        .header h1 { margin: 0; font-size: 2.5em; }\n        .header p { margin: 5px 0 0 0; opacity: 0.9; }\n        .build-status { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }\n        .detection-info { background: #e3f2fd; color: #1565c0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }\n        .summary { display: flex; gap: 20px; margin-bottom: 30px; justify-content: center; flex-wrap: wrap; }\n        .stat { background: white; padding: 25px; border-radius: 8px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); min-width: 140px; }\n        .stat h3 { margin: 0 0 10px 0; color: #666; font-size: 1em; }\n        .stat .number { font-size: 2.2em; font-weight: bold; }\n        .passed { border-top: 4px solid #28a745; color: #28a745; }\n        .failed { border-top: 4px solid #dc3545; color: #dc3545; }\n        .total { border-top: 4px solid #007bff; color: #007bff; }\n        .progress-bar { background: #e9ecef; border-radius: 8px; height: 30px; margin-bottom: 30px; overflow: hidden; }\n        .progress-fill { background: linear-gradient(90deg, #28a745, #20c997); height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }\n        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }\n        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #dee2e6; }\n        th { background: #f8f9fa; font-weight: 600; color: #495057; }\n        .status-passed { color: #28a745; font-weight: bold; }\n        .status-failed { color: #dc3545; font-weight: bold; }\n        .error-message { color: #dc3545; font-size: 0.9em; }\n        .footer { margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center; color: #6c757d; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🤖 微信小程序按钮功能测试报告</h1>\n            <p>生成时间: ${testResults.summary.timestamp}</p>\n            <p>构建号: ${env.BUILD_NUMBER}</p>\n        </div>\n        \n        <div class=\"build-status\">\n            🎉 构建状态: 稳定 (SUCCESS) - 动态检测结果\n        </div>\n        \n        <div class=\"detection-info\">\n            🔍 检测模式: 基于动态算法自动检测测试结果\n        </div>\n        \n        <div class=\"summary\">\n            <div class=\"stat total\">\n                <h3>总测试数</h3>\n                <div class=\"number\">${testResults.summary.total}</div>\n            </div>\n            <div class=\"stat passed\">\n                <h3>通过</h3>\n                <div class=\"number\">${testResults.summary.passed}</div>\n            </div>\n            <div class=\"stat failed\">\n                <h3>失败</h3>\n                <div class=\"number\">${testResults.summary.failed}</div>\n            </div>\n        </div>\n        \n        <div class=\"summary\">\n            <div class=\"stat total\">\n                <h3>总耗时</h3>\n                <div class=\"number\">${testResults.summary.totalDuration}ms</div>\n            </div>\n            <div class=\"stat total\">\n                <h3>平均耗时</h3>\n                <div class=\"number\">${(int)testResults.summary.averageDuration}ms</div>\n            </div>\n        </div>\n        \n        <div class=\"progress-bar\">\n            <div class=\"progress-fill\" style=\"width: ${testResults.summary.passRate}%;\">\n                通过率: ${testResults.summary.passRate}%\n            </div>\n        </div>\n        \n        <table>\n            <thead>\n                <tr>\n                    <th>测试用例</th>\n                    <th>状态</th>\n                    <th>耗时(ms)</th>\n                    <th>检测结果</th>\n                </tr>\n            </thead>\n            <tbody>"
+                    def htmlReport = "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>微信小程序按钮功能测试报告</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }\n        .header { background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }\n        .header h1 { margin: 0; font-size: 2.5em; }\n        .header p { margin: 5px 0 0 0; opacity: 0.9; }\n        .build-status { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }\n        .detection-info { background: #e3f2fd; color: #1565c0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }\n        .summary { display: flex; gap: 20px; margin-bottom: 30px; justify-content: center; flex-wrap: wrap; }\n        .stat { background: white; padding: 25px; border-radius: 8px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); min-width: 140px; }\n        .stat h3 { margin: 0 0 10px 0; color: #666; font-size: 1em; }\n        .stat .number { font-size: 2.2em; font-weight: bold; }\n        .passed { border-top: 4px solid #28a745; color: #28a745; }\n        .failed { border-top: 4px solid #dc3545; color: #dc3545; }\n        .total { border-top: 4px solid #007bff; color: #007bff; }\n        .progress-bar { background: #e9ecef; border-radius: 8px; height: 30px; margin-bottom: 30px; overflow: hidden; }\n        .progress-fill { background: linear-gradient(90deg, #28a745, #20c997); height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }\n        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }\n        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #dee2e6; }\n        th { background: #f8f9fa; font-weight: 600; color: #495057; }\n        .status-passed { color: #28a745; font-weight: bold; }\n        .status-failed { color: #dc3545; font-weight: bold; }\n        .error-message { color: #dc3545; font-size: 0.9em; }\n        .footer { margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center; color: #6c757d; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🤖 微信小程序按钮功能测试报告</h1>\n            <p>生成时间: ${summary.TIMESTAMP}</p>\n            <p>构建号: ${env.BUILD_NUMBER}</p>\n        </div>\n        \n        <div class=\"build-status\">\n            🎉 构建状态: 稳定 (SUCCESS) - 动态检测结果\n        </div>\n        \n        <div class=\"detection-info\">\n            🔍 检测模式: 基于动态算法自动检测测试结果\n        </div>\n        \n        <div class=\"summary\">\n            <div class=\"stat total\">\n                <h3>总测试数</h3>\n                <div class=\"number\">${summary.TOTAL_TESTS}</div>\n            </div>\n            <div class=\"stat passed\">\n                <h3>通过</h3>\n                <div class=\"number\">${summary.PASSED_TESTS}</div>\n            </div>\n            <div class=\"stat failed\">\n                <h3>失败</h3>\n                <div class=\"number\">${summary.FAILED_TESTS}</div>\n            </div>\n        </div>\n        \n        <div class=\"summary\">\n            <div class=\"stat total\">\n                <h3>总耗时</h3>\n                <div class=\"number\">${summary.TOTAL_DURATION}ms</div>\n            </div>\n            <div class=\"stat total\">\n                <h3>平均耗时</h3>\n                <div class=\"number\">${(int)Float.parseFloat(summary.AVG_DURATION)}ms</div>\n            </div>\n        </div>\n        \n        <div class=\"progress-bar\">\n            <div class=\"progress-fill\" style=\"width: ${summary.PASS_RATE}%;\">\n                通过率: ${summary.PASS_RATE}%\n            </div>\n        </div>\n        \n        <table>\n            <thead>\n                <tr>\n                    <th>测试用例</th>\n                    <th>状态</th>\n                    <th>耗时(ms)</th>\n                    <th>检测结果</th>\n                </tr>\n            </thead>\n            <tbody>"
                     
-                    testResults.testCases.each { testCase ->
-                        htmlReport += "\n                <tr>\n                    <td><strong>${testCase.name}</strong></td>\n                    <td class=\"status-${testCase.actualStatus}\">${testCase.actualStatus == 'passed' ? '✅ 通过' : '❌ 失败'}</td>\n                    <td>${testCase.duration}</td>\n                    <td>"
-                        if (testCase.message) {
-                            htmlReport += "<div class=\"error-message\">${testCase.message}</div>"
+                    testCases.each { testCase ->
+                        htmlReport += "\n                <tr>\n                    <td><strong>${testCase.NAME}</strong></td>\n                    <td class=\"status-${testCase.STATUS}\">${testCase.STATUS == 'passed' ? '✅ 通过' : '❌ 失败'}</td>\n                    <td>${testCase.DURATION}</td>\n                    <td>"
+                        if (testCase.MESSAGE) {
+                            htmlReport += "<div class=\"error-message\">${testCase.MESSAGE}</div>"
                         } else {
                             htmlReport += "功能正常"
                         }
@@ -190,7 +215,7 @@ pipeline {
                     writeFile file: 'test-results.html', text: htmlReport
                     
                     echo '✅ 动态测试报告生成完成'
-                    echo "📊 实际检测结果: ${testResults.summary.passed}通过/${testResults.summary.total}总计"
+                    echo "📊 实际检测结果: ${summary.PASSED_TESTS}通过/${summary.TOTAL_TESTS}总计"
                     echo '📁 生成文件: test-results.txt, test-results.xml, test-results.html'
                 }
             }
@@ -207,11 +232,7 @@ pipeline {
         
         success {
             echo '🎉 动态测试构建成功完成！'
-            script {
-                def testResultsContent = readFile file: env.testResultsFile
-                def testResults = new groovy.json.JsonSlurper().parseText(testResultsContent)
-                echo "📊 最终检测结果: ${testResults.summary.passed}个通过，${testResults.summary.failed}个失败，通过率${testResults.summary.passRate}%"
-            }
+            echo "📊 最终检测结果: ${env.passedTests}个通过，${env.failedTests}个失败，通过率${env.passRate}%"
         }
         
         failure {
